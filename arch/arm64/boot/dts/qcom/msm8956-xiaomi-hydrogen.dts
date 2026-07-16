@@ -3,8 +3,6 @@
  * Copyright (c) 2024, Barnabas Czeman <trabarni@gmail.com>
  * Copyright (c) 2026, Jamie Chio <chioks03@gmail.com>
  *
- * Based on msm8956-xiaomi-kenzo.dts, adapted from hydrogen downstream DTS.
- *
  * Xiaomi Mi Max (hydrogen) hardware overview:
  *   - SoC: Qualcomm MSM8956 (Snapdragon 650)
  *   - PMIC: PM8950 + PMI8950 + PM8004
@@ -15,7 +13,6 @@
  *   - WiFi/BT: Qualcomm WCN3660b
  *   - Fingerprint: FPC FPC1020
  *   - Notification LED: Awinic AW2013 RGB (I2C8)
- *   - Hall sensor: GPIO 107
  */
 /dts-v1/;
 
@@ -130,10 +127,6 @@
 		compatible = "linux,extcon-usb-dummy";
 	};
 
-	/*
-	 * Touch power rails (downstream tp1v8_vreg / tp2v8_vreg).
-	 * Kenzo used a single GPIO LDO on 134; hydrogen has separate 1.8V and 2.8V.
-	 */
 	tp1v8: regulator-tp1v8 {
 		compatible = "regulator-fixed";
 		regulator-name = "tp1v8";
@@ -165,11 +158,6 @@
 		regulator-boot-on;
 	};
 
-	/* IR Blaster via PMI8950 PWM (downstream pwm_ir) */
-	ir-led {
-		compatible = "pwm-ir-tx";
-		pwms = <&pmi8950_pwm 0 0 PWM_POLARITY_INVERTED>;
-	};
 };
 
 &adreno_gpu {
@@ -307,16 +295,8 @@
 };
 
 &otg {
-    /* 1. Allow the controller to switch between host and peripheral */
-    dr_mode = "otg";
-    
-    /* 2. Keep the dummy extcon to satisfy the dtsi, but it won't block DRD */
-    extcon = <&usb_vbus>, <0>;
-    
-    /* 3. Supply 5V to the OTG port when in host mode */
-    vbus-supply = <&otg_vbus>;
-    
-    status = "okay";
+	extcon = <&usb_vbus>, <0>;
+	status = "okay";
 };
 
 &pm8004_spmi_regulators {
