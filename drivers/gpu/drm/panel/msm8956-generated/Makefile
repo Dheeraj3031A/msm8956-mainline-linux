@@ -6,3 +6,5 @@ obj-$(CONFIG_DRM_PANEL_LONGCHEER_L9360_R63350) += panel-longcheer-l9360-r63350.o
 obj-$(CONFIG_DRM_PANEL_XIAOMI_KENZO_NT35532_BOE) += panel-xiaomi-kenzo-nt35532-boe.o
 obj-$(CONFIG_DRM_PANEL_XIAOMI_KENZO_NT35596_TIANMA) += panel-xiaomi-kenzo-nt35596-tianma.o
 obj-$(CONFIG_DRM_PANEL_XIAOMI_KENZO_R63315_SHARP) += panel-xiaomi-kenzo-r63315-sharp.o
+obj-$(CONFIG_DRM_PANEL_XIAOMI_HYDROGEN_R63350_TIANMA) += panel-xiaomi-hydrogen-r63350-tianma.o
+obj-$(CONFIG_DRM_PANEL_XIAOMI_HYDROGEN_R61322_AUO) += panel-xiaomi-hydrogen-r61322-auo.o
