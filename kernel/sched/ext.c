@@ -192,6 +192,7 @@ MODULE_PARM_DESC(bypass_lb_intv_us, "bypass load balance interval in microsecond
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/sched_ext.h>
+#undef CREATE_TRACE_POINTS
 
 static void process_ddsp_deferred_locals(struct rq *rq);
 static bool task_dead_and_done(struct task_struct *p);

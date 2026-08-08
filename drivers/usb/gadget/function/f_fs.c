@@ -3741,12 +3741,12 @@ static int ffs_func_set_alt(struct usb_function *f,
 	unsigned long flags;
 	int ret = 0, intf;
 
-	if (alt > MAX_ALT_SETTINGS)
-		return -EINVAL;
-
 	intf = ffs_func_revmap_intf(func, interface);
 	if (intf < 0)
 		return intf;
+
+	if (alt > MAX_ALT_SETTINGS)
+		return -EINVAL;
 
 	if (ffs->func)
 		ffs_func_eps_disable(ffs->func);

@@ -20,6 +20,7 @@
 #include <linux/err.h>
 #include <linux/list.h>
 #include <linux/mm.h>
+#include <linux/module.h>
 #include <linux/sizes.h>
 #include <linux/slab.h>
 #include <linux/string.h>
@@ -29,6 +30,8 @@
 #include <linux/highmem.h>
 #include <linux/io.h>
 #include <linux/kmemleak.h>
+#include <linux/sched.h>
+#include <linux/jiffies.h>
 #include <trace/events/cma.h>
 
 #include "internal.h"
@@ -52,6 +55,7 @@ const char *cma_get_name(const struct cma *cma)
 {
 	return cma->name;
 }
+EXPORT_SYMBOL_GPL(cma_get_name);
 
 static unsigned long cma_bitmap_aligned_mask(const struct cma *cma,
 					     unsigned int align_order)
@@ -785,6 +789,8 @@ static int cma_range_alloc(struct cma *cma, struct cma_memrange *cmr,
 	unsigned long start, pfn, mask, offset;
 	int ret = -EBUSY;
 	struct page *page = NULL;
+	int num_attempts = 0;
+	int max_retries = 5;
 
 	mask = cma_bitmap_aligned_mask(cma, align);
 	offset = cma_bitmap_aligned_offset(cma, cmr, align);
@@ -808,8 +814,29 @@ static int cma_range_alloc(struct cma *cma, struct cma_memrange *cmr,
 				bitmap_maxno, start, bitmap_count, mask,
 				offset);
 		if (bitmap_no >= bitmap_maxno) {
-			spin_unlock_irq(&cma->lock);
-			break;
+			if ((num_attempts < max_retries) && (ret == -EBUSY)) {
+				spin_unlock_irq(&cma->lock);
+
+				if (fatal_signal_pending(current) ||
+				    (gfp & __GFP_NORETRY))
+					break;
+
+				/*
+				 * Page may be momentarily pinned by some other
+				 * process which has been scheduled out, e.g.
+				 * in exit path, during unmap call, or process
+				 * fork and so cannot be freed there. Sleep
+				 * for 100ms and retry the allocation.
+				 */
+				start = 0;
+				ret = -ENOMEM;
+				schedule_timeout_killable(msecs_to_jiffies(100));
+				num_attempts++;
+				continue;
+			} else {
+				spin_unlock_irq(&cma->lock);
+				break;
+			}
 		}
 
 		pfn = cmr->base_pfn + (bitmap_no << cma->order_per_bit);
@@ -864,6 +891,10 @@ static struct page *__cma_alloc_frozen(struct cma *cma,
 	int ret = -ENOMEM, r;
 	unsigned long i;
 	const char *name = cma ? cma->name : NULL;
+
+	if (WARN_ON_ONCE((gfp & GFP_KERNEL) == 0 ||
+		(gfp & ~(GFP_KERNEL|__GFP_NOWARN|__GFP_NORETRY)) != 0))
+		return page;
 
 	if (!cma || !cma->count)
 		return page;
@@ -951,6 +982,7 @@ struct page *cma_alloc(struct cma *cma, unsigned long count,
 
 	return page;
 }
+EXPORT_SYMBOL_GPL(cma_alloc);
 
 static struct cma_memrange *find_cma_memrange(struct cma *cma,
 		const struct page *pages, unsigned long count)
@@ -1030,6 +1062,7 @@ bool cma_release(struct cma *cma, const struct page *pages,
 
 	return true;
 }
+EXPORT_SYMBOL_GPL(cma_release);
 
 bool cma_release_frozen(struct cma *cma, const struct page *pages,
 		unsigned long count)
@@ -1058,6 +1091,7 @@ int cma_for_each_area(int (*it)(struct cma *cma, void *data), void *data)
 
 	return 0;
 }
+EXPORT_SYMBOL_GPL(cma_for_each_area);
 
 bool cma_intersects(struct cma *cma, unsigned long start, unsigned long end)
 {

@@ -86,6 +86,10 @@ static struct vfsmount *shm_mnt __ro_after_init;
 
 #include "internal.h"
 
+#ifdef CONFIG_ASHMEM
+#include "../drivers/staging/android/ashmem.h"
+#endif
+
 #define VM_ACCT(size)    (PAGE_ALIGN(size) >> PAGE_SHIFT)
 
 /* Pretend that each entry is of this size in directory's i_size */
@@ -5235,6 +5239,12 @@ static const struct file_operations shmem_file_operations = {
 	.splice_write	= iter_file_splice_write,
 	.fallocate	= shmem_fallocate,
 	.setlease	= generic_setlease,
+#endif
+#ifdef CONFIG_ASHMEM
+	.unlocked_ioctl	= ashmem_memfd_ioctl,
+#ifdef CONFIG_COMPAT
+	.compat_ioctl = ashmem_memfd_ioctl,
+#endif
 #endif
 };
 

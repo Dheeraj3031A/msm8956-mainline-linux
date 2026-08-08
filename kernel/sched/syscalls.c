@@ -16,6 +16,9 @@
 #include "sched.h"
 #include "autogroup.h"
 
+#include <trace/hooks/sched.h>
+#undef TRACE_INCLUDE_PATH
+
 static inline int __normal_prio(int policy, int rt_prio, int nice)
 {
 	int prio;
@@ -407,12 +410,14 @@ static void __setscheduler_uclamp(struct task_struct *p,
 	    attr->sched_util_min != -1) {
 		uclamp_se_set(&p->uclamp_req[UCLAMP_MIN],
 			      attr->sched_util_min, true);
+		trace_android_vh_setscheduler_uclamp(p, UCLAMP_MIN, attr->sched_util_min);
 	}
 
 	if (attr->sched_flags & SCHED_FLAG_UTIL_CLAMP_MAX &&
 	    attr->sched_util_max != -1) {
 		uclamp_se_set(&p->uclamp_req[UCLAMP_MAX],
 			      attr->sched_util_max, true);
+		trace_android_vh_setscheduler_uclamp(p, UCLAMP_MAX, attr->sched_util_max);
 	}
 }
 
@@ -480,6 +485,12 @@ static int user_check_sched_setscheduler(struct task_struct *p,
 	/* Normal users shall not reset the sched_reset_on_fork flag: */
 	if (p->sched_reset_on_fork && !reset_on_fork)
 		goto req_priv;
+
+	if (!capable(CAP_SYS_NICE)) {
+		/* Can't change util-clamps */
+		if (attr->sched_flags & SCHED_FLAG_UTIL_CLAMP)
+			return -EPERM;
+	}
 
 	return 0;
 
@@ -685,6 +696,7 @@ change:
 			p->sched_class = next_class;
 			p->prio = newprio;
 			__setscheduler_dl_pi(newprio, policy, p, scope);
+			trace_android_rvh_setscheduler(p);
 		}
 		__setscheduler_uclamp(p, attr);
 
@@ -760,6 +772,7 @@ int sched_setscheduler(struct task_struct *p, int policy,
 {
 	return _sched_setscheduler(p, policy, param, true);
 }
+EXPORT_SYMBOL_GPL(sched_setscheduler);
 
 int sched_setattr(struct task_struct *p, const struct sched_attr *attr)
 {
@@ -790,6 +803,7 @@ int sched_setscheduler_nocheck(struct task_struct *p, int policy,
 {
 	return _sched_setscheduler(p, policy, param, false);
 }
+EXPORT_SYMBOL_GPL(sched_setscheduler_nocheck);
 
 /*
  * SCHED_FIFO is a broken scheduler model; that is, it is fundamentally
@@ -1335,6 +1349,8 @@ static void do_sched_yield(void)
 
 	schedstat_inc(rq->yld_count);
 	rq->donor->sched_class->yield_task(rq);
+
+	trace_android_rvh_do_sched_yield(rq);
 
 	preempt_disable();
 	rq_unlock_irq(rq, &rf);
