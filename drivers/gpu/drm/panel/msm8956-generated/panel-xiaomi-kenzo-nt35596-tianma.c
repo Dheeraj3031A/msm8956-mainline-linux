@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-// Copyright (c) 2025 FIXME
+// Copyright (c) 2026 FIXME
 // Generated with linux-mdss-dsi-panel-driver-generator from vendor device tree:
 //   Copyright (c) 2013, The Linux Foundation. All rights reserved. (FIXME)
 
@@ -489,11 +489,11 @@ static int tianma_nt35596_unprepare(struct drm_panel *panel)
 }
 
 static const struct drm_display_mode tianma_nt35596_mode = {
-	.clock = (1080 + 98 + 8 + 98) * (1920 + 10 + 2 + 8) * 60 / 1000,
+	.clock = (1080 + 98 + 8 + 200) * (1920 + 10 + 2 + 8) * 60 / 1000,
 	.hdisplay = 1080,
 	.hsync_start = 1080 + 98,
 	.hsync_end = 1080 + 98 + 8,
-	.htotal = 1080 + 98 + 8 + 98,
+	.htotal = 1080 + 98 + 8 + 200,
 	.vdisplay = 1920,
 	.vsync_start = 1920 + 10,
 	.vsync_end = 1920 + 10 + 2,
@@ -545,7 +545,8 @@ static int tianma_nt35596_probe(struct mipi_dsi_device *dsi)
 	dsi->lanes = 4;
 	dsi->format = MIPI_DSI_FMT_RGB888;
 	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST |
-			  MIPI_DSI_CLOCK_NON_CONTINUOUS | MIPI_DSI_MODE_LPM;
+			  MIPI_DSI_CLOCK_NON_CONTINUOUS |
+			  MIPI_DSI_MODE_VIDEO_NO_HBP | MIPI_DSI_MODE_LPM;
 
 	ctx->panel.prepare_prev_first = true;
 
