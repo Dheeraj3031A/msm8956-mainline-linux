@@ -128,6 +128,22 @@
 &blsp1_i2c4 {
 	status = "okay";
 
+	touchscreen@38 {
+		compatible = "focaltech,ft5426";
+		reg = <0x38>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <65 IRQ_TYPE_EDGE_FALLING>;
+
+		pinctrl-0 = <&ts_int_default &ts_reset_default &ts_power_default>;
+		pinctrl-names = "default";
+
+		reset-gpios = <&tlmm 64 GPIO_ACTIVE_LOW>;
+		vcc-supply = <&pm8950_l10>;
+		iovcc-supply = <&pm8950_l6>;
+		touchscreen-size-x = <1080>;
+		touchscreen-size-y = <1920>;
+	};
+
 	touchscreen@4a {
 		compatible = "atmel,maxtouch";
 		reg = <0x4a>;
