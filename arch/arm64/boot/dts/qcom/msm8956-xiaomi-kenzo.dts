@@ -73,10 +73,6 @@
 	};
 
 	reserved-memory {
-		adsp_mem: adsp_region@8c000000 {
-			reg = <0x0 0x8c000000 0x0 0x1400000>;
-			no-map;
-		};
 		cont-splash@83200000 {
 			reg = <0x0 0x83200000 0x0 (1920 * 1080 * 3)>;
 			no-map;

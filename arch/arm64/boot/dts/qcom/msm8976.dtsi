@@ -415,6 +415,11 @@
 			no-map;
 		};
 
+		adsp_mem: adsp_region@8c000000 {
+			reg = <0x0 0x8c000000 0x0 0x1400000>;
+			no-map;
+		};
+
 		wcnss_fw_mem: wcnss@8d200000 {
 			reg = <0x0 0x8d200000 0x0 0x800000>;
 			no-map;
