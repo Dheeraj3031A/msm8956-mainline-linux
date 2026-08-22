@@ -35,6 +35,7 @@
 #include <linux/slab.h>
 #include <linux/string.h>
 #include <linux/virtio_ring.h>
+#include <trace/hooks/remoteproc.h>
 
 #include "remoteproc_internal.h"
 
@@ -1887,6 +1888,8 @@ static void rproc_crash_handler_work(struct work_struct *work)
 		rproc_trigger_recovery(rproc);
 
 out:
+	trace_android_vh_rproc_recovery(rproc);
+
 	pm_relax(rproc->dev.parent);
 }
 

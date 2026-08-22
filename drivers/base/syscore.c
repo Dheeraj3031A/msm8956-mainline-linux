@@ -10,6 +10,7 @@
 #include <linux/module.h>
 #include <linux/suspend.h>
 #include <trace/events/power.h>
+#include <linux/wakeup_reason.h>
 
 static LIST_HEAD(syscore_list);
 static DEFINE_MUTEX(syscore_lock);
@@ -74,6 +75,8 @@ int syscore_suspend(void)
 	return 0;
 
  err_out:
+	log_suspend_abort_reason("System core suspend callback %pS failed",
+				 syscore->ops->suspend);
 	pr_err("PM: System core suspend callback %pS failed.\n",
 	       syscore->ops->suspend);
 

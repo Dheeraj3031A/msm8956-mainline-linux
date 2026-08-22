@@ -35,6 +35,7 @@
 #include <linux/devfreq.h>
 #include <linux/timer.h>
 #include <linux/nmi.h>
+#include <linux/wakeup_reason.h>
 
 #include "../base.h"
 #include "power.h"
@@ -57,6 +58,7 @@ static LIST_HEAD(dpm_suspended_list);
 static LIST_HEAD(dpm_late_early_list);
 static LIST_HEAD(dpm_noirq_list);
 
+struct suspend_stats suspend_stats;
 static DEFINE_MUTEX(dpm_list_mtx);
 static pm_message_t pm_transition;
 
@@ -1474,6 +1476,8 @@ Run:
 	error = dpm_run_callback(callback, dev, state, info);
 	if (error) {
 		WRITE_ONCE(async_error, error);
+		log_suspend_abort_reason("Device %s failed to %s noirq: error %d",
+					 dev_name(dev), pm_verb(state.event), error);
 		dpm_save_failed_dev(dev_name(dev));
 		pm_dev_err(dev, state, async ? " async noirq" : " noirq", error);
 		goto Complete;
@@ -1684,6 +1688,8 @@ Run:
 	error = dpm_run_callback(callback, dev, state, info);
 	if (error) {
 		WRITE_ONCE(async_error, error);
+		log_suspend_abort_reason("Device %s failed to %s late: error %d",
+					 dev_name(dev), pm_verb(state.event), error);
 		dpm_save_failed_dev(dev_name(dev));
 		pm_dev_err(dev, state, async ? " async late" : " late", error);
 		pm_runtime_enable(dev);
@@ -1972,6 +1978,9 @@ static void device_suspend(struct device *dev, pm_message_t state, bool async)
 
 		dpm_propagate_wakeup_to_parent(dev);
 		dpm_clear_superiors_direct_complete(dev);
+	} else {
+		log_suspend_abort_reason("Device %s failed to %s: error %d",
+					 dev_name(dev), pm_verb(state.event), error);
 	}
 
 	device_unlock(dev);
@@ -2249,6 +2258,9 @@ int dpm_prepare(pm_message_t state)
 		} else {
 			dev_info(dev, "not prepared for power transition: code %d\n",
 				 error);
+			log_suspend_abort_reason("Device %s not prepared for power transition: code %d",
+						 dev_name(dev), error);
+			dpm_save_failed_dev(dev_name(dev));
 		}
 
 		mutex_unlock(&dpm_list_mtx);

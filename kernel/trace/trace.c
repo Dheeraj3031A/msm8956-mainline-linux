@@ -804,7 +804,6 @@ void tracing_on(void)
 {
 	tracer_tracing_on(&global_trace);
 }
-EXPORT_SYMBOL_GPL(tracing_on);
 
 #ifdef CONFIG_TRACER_SNAPSHOT
 static void tracing_snapshot_instance_cond(struct trace_array *tr,
@@ -1277,7 +1276,6 @@ int tracing_is_on(void)
 {
 	return tracer_tracing_is_on(&global_trace);
 }
-EXPORT_SYMBOL_GPL(tracing_is_on);
 
 static int __init set_buf_size(char *str)
 {

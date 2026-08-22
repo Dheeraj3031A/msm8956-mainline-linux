@@ -673,6 +673,7 @@ unsigned long vm_unmapped_area(struct vm_unmapped_area_info *info)
 	trace_vm_unmapped_area(addr, info);
 	return addr;
 }
+EXPORT_SYMBOL_GPL(vm_unmapped_area);
 
 /* Get an address range which is currently unmapped.
  * For shmat() with addr=0.
@@ -862,6 +863,7 @@ __get_unmapped_area(struct file *file, unsigned long addr, unsigned long len,
 	error = security_mmap_addr(addr);
 	return error ? error : addr;
 }
+EXPORT_SYMBOL(__get_unmapped_area);
 
 unsigned long
 mm_get_unmapped_area(struct file *file, unsigned long addr, unsigned long len,

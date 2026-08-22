@@ -105,6 +105,7 @@
 #include <linux/rseq.h>
 #include <uapi/linux/pidfd.h>
 #include <linux/pidfs.h>
+#include <linux/cpufreq_times.h>
 #include <linux/tick.h>
 #include <linux/unwind_deferred.h>
 #include <linux/pgalloc.h>
@@ -124,6 +125,8 @@
 
 #include <kunit/visibility.h>
 
+#undef CREATE_TRACE_POINTS
+#include <trace/hooks/sched.h>
 /*
  * Minimum number of threads to boot the kernel
  */
@@ -133,6 +136,8 @@
  * Maximum number of threads
  */
 #define MAX_THREADS FUTEX_TID_MASK
+
+EXPORT_TRACEPOINT_SYMBOL_GPL(task_newtask);
 
 /*
  * Protected counters by write_lock_irq(&tasklist_lock)
@@ -154,6 +159,7 @@ static const char * const resident_page_types[] = {
 DEFINE_PER_CPU(unsigned long, process_counts) = 0;
 
 __cacheline_aligned DEFINE_RWLOCK(tasklist_lock);  /* outer */
+EXPORT_SYMBOL_GPL(tasklist_lock);
 
 #ifdef CONFIG_PROVE_RCU
 int lockdep_tasklist_lock_is_held(void)
@@ -531,9 +537,11 @@ void free_task(struct task_struct *tsk)
 #ifdef CONFIG_SECCOMP
 	WARN_ON_ONCE(tsk->seccomp.filter);
 #endif
+	cpufreq_task_times_exit(tsk);
 	release_user_cpus_ptr(tsk);
 	scs_release(tsk);
 
+	trace_android_vh_free_task(tsk);
 #ifndef CONFIG_THREAD_INFO_IN_TASK
 	/*
 	 * The task is finally done with both the stack and thread_info,
@@ -1002,6 +1010,10 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
 	tsk->mm_cid.active = 0;
 	INIT_HLIST_NODE(&tsk->mm_cid.node);
 #endif
+	android_init_vendor_data(tsk, 1);
+	android_init_oem_data(tsk, 1);
+
+	trace_android_vh_dup_task_struct(tsk, orig);
 	return tsk;
 
 free_stack:
@@ -2064,6 +2076,8 @@ __latent_entropy struct task_struct *copy_process(
 	if (args->io_thread)
 		p->flags |= PF_IO_WORKER;
 
+	cpufreq_task_times_init(p);
+
 	if (args->name)
 		strscpy_pad(p->comm, args->name, sizeof(p->comm));
 
@@ -2655,6 +2669,8 @@ pid_t kernel_clone(struct kernel_clone_args *args)
 
 	if (IS_ERR(p))
 		return PTR_ERR(p);
+
+	cpufreq_task_times_alloc(p);
 
 	/*
 	 * Do this prior waking up the new thread - the thread pointer

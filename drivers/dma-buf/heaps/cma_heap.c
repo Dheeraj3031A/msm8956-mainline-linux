@@ -33,6 +33,7 @@
 static struct cma *dma_areas[MAX_CMA_AREAS] __initdata;
 static unsigned int dma_areas_num __initdata;
 
+#if IS_BUILTIN(CONFIG_DMABUF_HEAPS_CMA)
 int __init dma_heap_cma_register_heap(struct cma *cma)
 {
 	if (dma_areas_num >= ARRAY_SIZE(dma_areas))
@@ -42,6 +43,7 @@ int __init dma_heap_cma_register_heap(struct cma *cma)
 
 	return 0;
 }
+#endif
 
 struct cma_heap {
 	struct dma_heap *heap;
@@ -119,9 +121,10 @@ static struct sg_table *cma_heap_map_dma_buf(struct dma_buf_attachment *attachme
 {
 	struct dma_heap_attachment *a = attachment->priv;
 	struct sg_table *table = &a->table;
+	int attrs = attachment->dma_map_attrs;
 	int ret;
 
-	ret = dma_map_sgtable(attachment->dev, table, direction, 0);
+	ret = dma_map_sgtable(attachment->dev, table, direction, attrs);
 	if (ret)
 		return ERR_PTR(-ENOMEM);
 	a->mapped = true;
@@ -133,9 +136,10 @@ static void cma_heap_unmap_dma_buf(struct dma_buf_attachment *attachment,
 				   enum dma_data_direction direction)
 {
 	struct dma_heap_attachment *a = attachment->priv;
+	int attrs = attachment->dma_map_attrs;
 
 	a->mapped = false;
-	dma_unmap_sgtable(attachment->dev, table, direction, 0);
+	dma_unmap_sgtable(attachment->dev, table, direction, attrs);
 }
 
 static int cma_heap_dma_buf_begin_cpu_access(struct dma_buf *dmabuf,
@@ -438,3 +442,6 @@ static int __init add_cma_heaps(void)
 }
 module_init(add_cma_heaps);
 MODULE_DESCRIPTION("DMA-BUF CMA Heap");
+MODULE_LICENSE("GPL v2");
+MODULE_IMPORT_NS("DMA_BUF");
+MODULE_IMPORT_NS("DMA_BUF_HEAP");
