@@ -643,3 +643,13 @@
 &adsp {
 	status = "okay";
 };
+
+/* Increase LPASS memory to 23MB for Kenzo ADSP firmware */
+&lpass_mem {
+	reg = <0x0 0x8c200000 0x0 0x1700000>;
+};
+
+/* Shift WCNSS memory up to avoid overlapping with the expanded LPASS memory */
+&wcnss_fw_mem {
+	reg = <0x0 0x8d900000 0x0 0x800000>;
+};
