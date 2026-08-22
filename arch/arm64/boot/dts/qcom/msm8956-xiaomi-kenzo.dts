@@ -6,6 +6,9 @@
 
 #include <dt-bindings/arm/qcom,ids.h>
 #include <dt-bindings/input/atmel-maxtouch.h>
+#include <dt-bindings/sound/qcom,q6afe.h>
+#include <dt-bindings/sound/qcom,q6asm.h>
+#include <dt-bindings/sound/qcom,wcd9335.h>
 
 #include "msm8956.dtsi"
 
@@ -530,4 +533,113 @@
 
 &xo_board {
 	clock-frequency = <19200000>;
+};
+
+/ {
+	eldo2_8976: eldo2 {
+		compatible = "regulator-fixed";
+		regulator-name = "eldo2_8976";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		startup-delay-us = <0>;
+		enable-active-high;
+		gpio = <&pm8950_gpios 7 GPIO_ACTIVE_HIGH>;
+	};
+
+	sound {
+		compatible = "qcom,sm8250-sndcard";
+		pinctrl-0 = <&cdc_reset_line_act &wcd_intr_default>;
+		pinctrl-names = "default";
+		model = "msm8976-tasha-snd-card";
+
+		audio-routing =
+			"RX_BIAS", "MCLK",
+			"AMIC1", "MIC BIAS1",
+			"AMIC2", "MIC BIAS2",
+			"AMIC3", "MIC BIAS3",
+			"TX_I2S_CLK", "MCLK";
+
+		mm1-dai-link {
+			link-name = "MultiMedia1";
+			cpu {
+				sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA1>;
+			};
+		};
+		slim-dai-link {
+			link-name = "SLIM Playback";
+			cpu {
+				sound-dai = <&q6afedai SLIMBUS_0_RX>;
+			};
+			platform {
+				sound-dai = <&q6routing>;
+			};
+			codec {
+				sound-dai = <&wcd9335 AIF4_PB>;
+			};
+		};
+		slimcap-dai-link {
+			link-name = "SLIM Capture";
+			cpu {
+				sound-dai = <&q6afedai SLIMBUS_0_TX>;
+			};
+			platform {
+				sound-dai = <&q6routing>;
+			};
+			codec {
+				sound-dai = <&wcd9335 AIF1_CAP>;
+			};
+		};
+	};
+};
+
+&slim_msm {
+	status = "okay";
+
+	tasha_ifd: ifd@0,0 {
+		compatible = "slim217,1a0";
+		reg = <0 0>;
+	};
+
+	wcd9335: codec@1,0 {
+		compatible = "slim217,1a0";
+		reg = <1 0>;
+
+		interrupt-parent = <&tlmm>;
+		interrupts = <120 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+
+		reset-gpios = <&tlmm 133 GPIO_ACTIVE_LOW>;
+		slim-ifc-dev = <&tasha_ifd>;
+
+		#sound-dai-cells = <1>;
+
+		vdd-buck-supply = <&eldo2_8976>;
+		vdd-buck-sido-supply = <&eldo2_8976>;
+		vdd-tx-supply = <&pm8950_l5>;
+		vdd-rx-supply = <&pm8950_l5>;
+		vdd-io-supply = <&pm8950_l5>;
+	};
+};
+
+&tlmm {
+	cdc_reset_line_act: cdc-reset-line-act {
+		pins = "gpio133";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-disable;
+		output-high;
+	};
+	wcd_intr_default: wcd-intr-default {
+		pins = "gpio120";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-disable;
+	};
+};
+
+&adsp {
+	status = "okay";
 };
