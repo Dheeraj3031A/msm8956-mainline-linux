@@ -2190,7 +2190,9 @@
 		compatible = "qcom,msm8976-adsp-pil";
 		reg = <0x0c200000 0x100>;
 
-		interrupts-extended = <&intc GIC_SPI 289 IRQ_TYPE_EDGE_RISING>,
+		/* wdog is SPI 293 (as on msm8953). 289 is the SMD edge interrupt below: using it here made every SMD
+		 * message from the ADSP look like a watchdog bite -> endless "crash detected in adsp: type watchdog" loop. */
+		interrupts-extended = <&intc GIC_SPI 293 IRQ_TYPE_EDGE_RISING>,
 				      <&adsp_smp2p_in 0 IRQ_TYPE_EDGE_RISING>,
 				      <&adsp_smp2p_in 1 IRQ_TYPE_EDGE_RISING>,
 				      <&adsp_smp2p_in 2 IRQ_TYPE_EDGE_RISING>,
@@ -2211,7 +2213,7 @@
 		status = "disabled";
 
 		smd-edge {
-			interrupts = <GIC_SPI 289 IRQ_TYPE_EDGE_RISING>;
+			interrupts = <GIC_SPI 156 IRQ_TYPE_EDGE_RISING>;
 
 			label = "lpass";
 			mboxes = <&apcs 8>;
@@ -2237,6 +2239,7 @@
 						compatible = "qcom,q6afe-dais";
 						#address-cells = <1>;
 						#size-cells = <0>;
+						#sound-dai-cells = <1>;
 					};
 				};
 
@@ -2247,6 +2250,7 @@
 						compatible = "qcom,q6asm-dais";
 						#address-cells = <1>;
 						#size-cells = <0>;
+						#sound-dai-cells = <1>;
 						i2s {
 							reg = <1>;
 						};
@@ -2258,6 +2262,7 @@
 					reg = <APR_SVC_ADM>;
 					q6routing: routing {
 						compatible = "qcom,q6adm-routing";
+						#sound-dai-cells = <0>;
 					};
 				};
 			};

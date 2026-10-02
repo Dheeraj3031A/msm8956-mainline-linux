@@ -17,6 +17,13 @@
 };
 
 /*
- * You might be wondering.. why is it so empty out there?
- * Well, the SoCs are almost identical.
+ * MSM8956 only features 2 Cortex-A72 cores (cpu4 and cpu5).
+ * cpu6 and cpu7 do not exist on this SoC.
  */
+&cpu6 {
+	status = "disabled";
+};
+
+&cpu5 {
+	status = "disabled";
+};
