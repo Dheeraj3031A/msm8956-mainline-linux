@@ -626,6 +626,11 @@ static int smbchg_charging_set_ilim(struct smbchg_chip *chip, int current_ua)
 	int ilim;
 	int ret;
 
+	if (current_ua == 0)
+		return smbchg_charging_enable(chip, false);
+
+	smbchg_charging_enable(chip, true);
+
 	if (current_ua < chip->data->ilim_table[0])
 		/* Target current limit too small */
 		return -EINVAL;
@@ -1431,6 +1436,49 @@ static enum power_supply_property smbchg_props[] = {
 	POWER_SUPPLY_PROP_CHARGE_TERM_CURRENT
 };
 
+static ssize_t charging_enabled_show(struct device *dev,
+				     struct device_attribute *attr, char *buf)
+{
+	struct power_supply *psy = dev_get_drvdata(dev);
+	struct smbchg_chip *chip = power_supply_get_drvdata(psy);
+	unsigned int val = 0;
+	int ret;
+
+	ret = regmap_read(chip->regmap, chip->base + SMBCHG_BAT_IF_CMD_CHG, &val);
+	if (ret)
+		return ret;
+
+	return sysfs_emit(buf, "%d\n", (val & CHG_EN_BIT) ? 0 : 1);
+}
+
+static ssize_t charging_enabled_store(struct device *dev,
+				      struct device_attribute *attr,
+				      const char *buf, size_t count)
+{
+	struct power_supply *psy = dev_get_drvdata(dev);
+	struct smbchg_chip *chip = power_supply_get_drvdata(psy);
+	bool enable;
+	int ret;
+
+	ret = kstrtobool(buf, &enable);
+	if (ret)
+		return ret;
+
+	ret = smbchg_charging_enable(chip, enable);
+	if (ret)
+		return ret;
+
+	power_supply_changed(psy);
+	return count;
+}
+static DEVICE_ATTR_RW(charging_enabled);
+
+static struct attribute *smbchg_usb_attrs[] = {
+	&dev_attr_charging_enabled.attr,
+	NULL,
+};
+ATTRIBUTE_GROUPS(smbchg_usb);
+
 static const struct power_supply_desc smbchg_usb_psy_desc = {
 	.name = "qcom-smbchg-usb",
 	.type = POWER_SUPPLY_TYPE_USB,
@@ -1629,6 +1677,7 @@ static int smbchg_probe(struct platform_device *pdev)
 
 	supply_config.drv_data = chip;
 	supply_config.fwnode = dev_fwnode(&pdev->dev);
+	supply_config.attr_grp = smbchg_usb_groups;
 	chip->usb_psy = devm_power_supply_register(
 		chip->dev, &smbchg_usb_psy_desc, &supply_config);
 	if (IS_ERR(chip->usb_psy)) {
