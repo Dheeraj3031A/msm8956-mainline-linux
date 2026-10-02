@@ -138,9 +138,6 @@
 		interrupt-parent = <&tlmm>;
 		interrupts = <65 IRQ_TYPE_EDGE_FALLING>;
 
-		pinctrl-0 = <&ts_int_default &ts_reset_default &ts_power_default>;
-		pinctrl-names = "default";
-
 		reset-gpios = <&tlmm 64 GPIO_ACTIVE_LOW>;
 		vcc-supply = <&pm8950_l10>;
 		iovcc-supply = <&pm8950_l6>;
@@ -153,9 +150,6 @@
 		reg = <0x4a>;
 		interrupt-parent = <&tlmm>;
 		interrupts = <65 IRQ_TYPE_EDGE_FALLING>;
-
-		pinctrl-0 = <&ts_int_default &ts_reset_default &ts_power_default>;
-		pinctrl-names = "default";
 
 		reset-gpios = <&tlmm 64 GPIO_ACTIVE_LOW>;
 		vdda-supply = <&pm8950_l6>;
@@ -484,7 +478,7 @@
 		pins = "gpio100";
 		function = "gpio";
 		drive-strength = <2>;
-		bias-disable;
+		bias-pull-up;
 	};
 
 	ts_int_default: ts-int-default {
